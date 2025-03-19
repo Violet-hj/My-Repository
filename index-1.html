@@ -1,0 +1,2612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel常用函数查询系统</title>
+    <style>
+        /* 基础样式 */
+        :root {
+            --primary-color: #4a90e2;  /* 主色调 */
+            --secondary-color: #6c5ce7;  /* 辅助色 */
+            --glass-bg: rgba(255, 255, 255, 0.95);  /* 毛玻璃背景 */
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            overflow-y: hidden; /* 隐藏全局滚动条 */
+        }
+
+        /* 容器布局 */
+.container {
+    max-width: 880px; /* 统一容器宽度 */
+    max-height: 1080px;
+    margin: 0 auto;
+    padding: 0 20px; /* 新增左右内边距 */
+    overflow-y: none;
+}
+
+/* 新增统一宽度控制（在.container样式后添加） */
+#randomDisplay,
+#functionList,
+.favorites-list {
+    max-width: 800px; /* 统一宽度 */
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}
+
+        /* 头部区域 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* 搜索框样式 */
+        .search-box {
+            width: 95%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid var(--primary-color);
+            border-radius: 25px;
+            margin-bottom: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            max-width: 770px; /* 固定搜索框宽度 */
+        }
+
+        /* 按钮组样式 */
+        .button-group {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        button {
+            padding: 12px 30px; /* 调整功能按钮高度和宽度 */
+            border: none;
+            border-radius: 20px;
+            background: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* 函数卡片样式 */
+        .function-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px 27px;
+            margin: 15px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .function-card:hover {
+            transform: translateY(-3px);
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--glass-bg);
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 30px;
+            border-radius: 15px;
+            position: relative;
+            z-index: 1002; /* 高于聊天框的1001 */
+        }
+
+        /* 参数表格样式 */
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .param-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px;
+        }
+
+        .param-table th,
+        .param-table td {
+               text-align: center; /* 新增居中对齐 */
+               vertical-align: middle;
+               padding: 12px; /* 增大内边距 */
+        }
+
+        /* 收藏按钮样式 */
+        .favorite-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #ccc;
+        }
+
+        .favorite-btn.active {
+            color: #ff4081;
+        }
+
+        .favorite-btn {
+            z-index: 1001; /* 修复1：确保按钮可点击 */
+        }
+
+/* 调整分类和版本间距 */
+.meta span {
+    display: block;
+    margin: 8px 0; /* 从5px调整为8px */
+    line-height: 1.5;
+}
+
+/* 修改版本显示为单行 */
+.version-info {
+    margin-top: -0.5cm; /* 新增 */
+    margin-bottom: 15px;
+}
+        .version-info span {
+            display: inline-block;
+            margin: 0 8px;
+        }
+        .version-info span:not(:last-child)::after {
+            content: "|";
+            margin-left: 8px;
+            margin-right: 8px; /* 增加右边距 */
+            color: #666;
+        }
+        /* 新增样式 */
+        .favorites-header {
+            display: flex;
+            padding: 10px;
+            background: var(--glass-bg);
+            margin-bottom: 10px;
+        }
+        .favorites-header span {
+            font-weight: bold;
+        }
+        .version-info span {
+            display: inline-block;
+            margin: 0 8px;
+        }
+
+/* 新增收藏列表表格样式 */
+.favorites-list {
+    margin-top: 30px;
+    border-radius: 12px;
+    padding: 15px; /* 内边距 */
+    background: var(--glass-bg); /* 新增背景色 */
+    backdrop-filter: blur(10px); /* 新增毛玻璃效果 */
+    max-height: 270px; /* 60px表头 + 3x60内容 + 40边距 */
+    overflow: hidden;  /* 隐藏外层滚动条 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 保持阴影效果 */
+    max-width: 768px; /* 统一宽度 */
+}
+
+/* 修改点2：表格行高设置 */
+.favorites-table tr {
+    height: 40px;      /* 新增：固定每行高度 */
+}
+
+.favorites-title {
+            font-size: 18px;
+            margin-bottom: 0; /* 取消底部边距 */
+            padding: 12px 15px; /* 增加内边距 */
+            display: flex;
+            align-items: center; /* 垂直居中 */
+            height: 40px; /* 与表头高度一致 */
+            background: var(--glass-bg); /* 使用全局毛玻璃背景变量 */
+            backdrop-filter: blur(5px); /* 与容器效果一致 */
+            font-weight: 700; /* 加粗程度与其他标题一致 */
+}
+
+.favorites-table {
+    width: 100%;
+    border-collapse: collapse;
+    display: block; /* 启用块级布局 */
+}
+.favorites-table thead {
+    display: block; /* 独立表头区块 */
+    background: var(--primary-color);
+    color: white;
+}
+.favorites-table tbody {
+    display: block;
+    max-height: 160px; /* 3行x60px */
+    overflow-y: auto;  /* 仅内容区域滚动 */
+}
+
+/* 修改点3：固定表头实现 */
+        .favorites-table thead tr {
+            height: 40px; /* 降低表头高度 */
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+            vertical-align: middle; /* 新增垂直居中 */
+        }
+.favorites-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+        .favorites-table td {
+            cursor: pointer; /* 点击函数名可查看详情 */
+            vertical-align: middle;  /* 垂直居中 */
+            text-align: center;     /* 水平居中 */
+            padding: 10px 8px; /* 调整内边距 */
+            border: 1px solid #ddd; /* 修改为透明边框 */
+            border: none; /* 新增：取消边框 */
+}
+
+
+.favorites-table th:nth-child(1),
+.favorites-table td:nth-child(1) { /* 序号列 */
+    width: 8%;
+    min-width: 50px;
+}
+.favorites-table th:nth-child(2),
+.favorites-table td:nth-child(2) { /* 函数名称列 */
+    width: 18%;
+    min-width: 100px;
+}
+.favorites-table th:nth-child(3),
+.favorites-table td:nth-child(3) { /* 分类列 */
+    width: 24%;
+    min-width: 80px;
+}
+.favorites-table th:nth-child(4),
+.favorites-table td:nth-child(4) { /* 功能说明列 */
+    width: 50%; /* 增加功能说明列宽度 */
+    min-width: 200px;
+    text-align: center !important; /* 强制第四列居中对齐 */
+}
+
+.favorites-table th {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* 修改点3：函数名称悬停效果 */
+.favorites-table .function-name {
+    transition: all 0.3s ease; /* 新增：过渡动画 */
+    cursor: pointer;
+}
+.favorites-table .function-name:hover {
+    color: var(--primary-color); /* 提亮颜色 */
+    transform: scale(1.05);      /* 放大效果 */
+    font-weight: 600;            /* 加粗文字 */
+}
+
+/* === 新增样式 === */
+.search-container {
+    position: relative;  /* 关键：建立定位上下文 */
+    width: 95%;         /* 与搜索框同宽 */
+    margin: 0 auto 20px; /* 居中+下边距 */
+}
+
+/* === 修改统计信息样式 === */
+.count-tip {
+    position: absolute;
+    right: 55px; /* 原20px改为55px，向左微调 */
+    top: 36.5%; /* 原52%改为36.5%，向上微调 */
+    transform: translateY(-50%); /* 使用标准居中方式 */
+    z-index: 2	; /* 新增：确保在输入框上层 */
+    color: #0073E8;
+    font-size: 12px;
+    pointer-events: none; /* 防止影响输入框操作 */
+    background: rgba(255,255,255,0.9);
+    padding: 2px 8px;    /* 减少内边距 */
+    border-radius: 15px;
+    border: 1px solid #eee; /* 新增边框 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.5s ease-out;
+}
+
+/* === 移动端适配 === */
+@media (max-width: 480px) {
+    .count-tip {
+        font-size: 10px;
+        right: 15px;
+    }
+}
+
+/* 新增：确保搜索框容器建立定位上下文 */
+.search-box-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+        /* 修改点4：随机显示区域 */
+        #randomDisplay {
+                max-height: 140px; /* 原高度200px */
+                margin: 10px 0;
+                transition: all 0.3s;
+                max-width: 800px; /* 统一宽度 */
+                margin: 10px auto; /* 增加自动居中 */
+        }
+
+    /* 系统信息样式 */
+    .system-info {
+        position: fixed;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 12px;
+        color: #666; /* 柔和的灰色 */
+        padding: 6px 12px;
+        border-radius: 15px;
+        /* 移除背景色 */
+    }
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 10px; /* 减少左右间距 */
+    }
+    
+    .button-group {
+        flex-wrap: wrap;
+    }
+    
+    button {
+        flex: 1 1 45%;
+        margin: 4px;
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+    
+    .search-box,
+    .function-card,
+    .favorites-list,
+    #randomDisplay {
+        max-width: 100% !important; /* 强制等宽 */
+        width: calc(100% - 20px) !important; /* 左右留白 */
+        margin: 8px auto !important;
+    }
+    
+    .favorites-table td:nth-child(4) {
+        padding-left: 8px !important; /* 调整说明列间距 */
+    }
+    
+    .modal-content {
+        width: 90%;
+        padding: 20px;
+        margin: 10px auto;
+    }
+    
+    .system-info {
+        width: 90%;
+        font-size: 10px;
+    }
+ }
+
+/* 在<style>标签内添加 */
+.chatbox iframe {
+    background: white; /* 防止透明背景 */
+    backdrop-filter: blur(5px); /* 毛玻璃效果 */
+}
+        #chatbox {
+            position: fixed;
+            bottom: 70px;
+            top: auto !important;
+            left: 0.5% !important;   /* 原right改为left */
+            right: auto !important;  /* 移除右侧定位 */
+            width: 24% !important;
+            height: 71vh !important;
+            z-index: 1001;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    
+         /* 移动端适配调整 */
+        @media (max-width: 768px) {
+            #chatbox {
+                width: 90% !important;
+                left: 5% !important;  /* 同步修改左侧定位 */
+                right: auto !important;
+                height: 50vh !important;
+                bottom: 70px;
+            }
+
+    /* 新增标题栏调整 */
+    #chatbox > div:first-child {
+        height: 36px !important; /* 降低标题栏高度 */
+        padding: 0 10px !important;
+    }
+    
+    #chatbox > div:first-child span {
+        font-size: 14px !important; /* 标题文字缩小 */
+    }
+    
+    .chat-controls button {
+        font-size: 18px !important; /* 按钮缩小 */
+        padding: 0 4px !important;
+    }
+    
+    #chatbox.minimized {
+        width: 120px !important; /* 最小化宽度调整 */
+    }
+}
+
+
+/* 新增对话框控制按钮样式 */
+.chat-controls {
+    position: static; /* 修改定位方式 */
+    right: 10px;
+    top: 50%;
+    transform: none;
+    display: flex;
+    gap: 12px; /* 增加按钮间距 */
+}
+
+.chat-controls button {
+    background: none;
+    border: none;
+    color: white !important; /* 强制白色 */
+    font-size: 20px !important; /* 增大字号 */
+    cursor: pointer;
+    padding: 0 6px !important;
+    transition: opacity 0.2s;
+}
+
+.chat-controls button:hover {
+    opacity: 0.8;
+}
+
+#chatbox.minimized {
+    width: 200px !important;
+    height: 40px !important;
+    overflow: hidden; /* 新增：隐藏溢出内容 */
+}
+
+#chatbox.minimized iframe {
+    display: none;
+}
+
+/* 添加标题栏定位（在<style>标签内添加） */
+#chatbox > div:first-child {
+    position: relative; /* 新增定位上下文 */
+    height: 40px !important; /* 增大标题栏高度 */
+    padding: 0 15px !important;
+}
+
+       /* 修改点3：下拉列表定位（新增代码） */
+       datalist#functions {
+            max-height: 100px; /* 按每个选项30px计算，10个选项正好300px */
+            overflow-y: auto;
+            width: calc(100% - 40px);
+            left: 20px !important;
+            transform: none;
+            /* 新增滚动条精确控制 */
+            scrollbar-width: thin; /* Firefox滚动条细型 */
+            scrollbar-color: var(--primary-color) #f1f1f1; /* 滚动条颜色 */
+        }
+
+        /* 滚动条轨道样式 */
+        datalist#functions::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+
+        /* 滚动条滑块样式 */
+        datalist#functions::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        /* 精确控制选项高度 */
+        datalist#functions option {
+            padding: 8px 12px;  /* 调整内边距 */
+            line-height: 1.4;   /* 精确控制行高 */
+            min-height: 30px;   /* 固定每个选项高度 */
+        }
+        </style>
+</head>
+<body>
+    <div class="container">         
+        <div class="header">        
+            <h1>Excel常用函数查询系统</h1>
+              <!-- 新增搜索框专用容器 -->
+              <div class="search-container"> <!-- 新增容器 -->
+            <input list="functions" class="search-box" placeholder="输入函数名称..." id="searchInput">
+                 <div id="functionCount" class="count-tip"></div> <!-- 统计信息移入容器内 -->
+          </div>
+            <datalist id="functions">
+                <!-- 动态填充函数选项 -->
+            </datalist>
+            <div class="button-group">
+                <button onclick="toggleRandom()">随机查询</button>
+                <button onclick="pauseRoll()">暂停滚动</button>
+                <button onclick="toggleFavorites()">显示收藏</button>
+                <button onclick="resetSearch()">重置查询</button> 
+            </div>
+            <div id="randomDisplay"></div>
+          </div>
+        </div>
+
+    <div id="functionList"></div>
+    <div id="favoritesList" class="favorites-list" style="display: none;">
+        <div class="favorites-title">收藏列表</div>
+        <table class="favorites-table">
+                <thead>
+                    <tr>
+                        <th style="width:60px">序号</th>
+                        <th style="width:150px">函数名称</th>
+                        <th>分类</th> <!-- 宽度由CSS控制 -->
+                        <th>功能说明</th>
+                    </tr>
+                    <!-- 表头内容由JS填充 -->
+                </thead>
+                <tbody>
+                    <!-- 内容由JS填充 -->
+                </tbody>
+        </table>
+    </div>
+    </div>
+
+    <!-- 新增系统信息 -->
+    <div class="system-info">
+        版本号：Version.1.0 | 制作人：Violet_hj
+    </div>
+
+</div>
+
+<!-- 替换body末尾的对话框代码 -->
+<div id="chatbox" style="position: fixed; bottom: 15px; left: 10px; width: 500px; height: 700px; z-index: 1001; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+    <div style="height: 40px; /* 增大高度 */ background: #4a90e2; border-radius: 12px 12px 0 0; padding: 10px 20px; color: white; font-weight: bold; position: relative; display: flex; justify-content: space-between; align-items: center;">
+        <span>Kimi智能助手</span>
+        <div class="chat-controls">
+            <button class="min-btn" style="font-size: 24px">－</button>
+            <button class="chat-close-btn" style="font-size: 24px">×</button>
+        </div>
+    </div>
+    <iframe 
+        src="https://kimi.moonshot.cn/" 
+        style="width: 100%; height: calc(100% - 30px); border: none; border-radius: 0 0 12px 12px;"
+    ></iframe>
+</div>
+
+</body>
+
+    <!-- 详情弹窗 -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <button class="favorite-btn" onclick="toggleFavorite()">☆</button>
+            <button class="modal-close-btn" onclick="closeModal()">×</button>
+            <h2 id="funcTitle"></h2>
+            <h3>功能说明</h3>
+            <p id="funcDesc"></p>
+            <h3>语法结构</h3>
+            <pre id="funcSyntax"></pre>
+            <h3>参数说明</h3>
+            <table class="param-table" id="paramTable"></table>
+            <h3>使用示例</h3>
+            <pre id="funcExample"></pre>
+        </div>
+    </div>
+
+    <script>
+        // 示例数据
+        const functions = {
+    "AVERAGE": {
+        category: "统计",
+        desc: "计算参数的算术平均值",
+        syntax: "AVERAGE(number1, [number2], ...)",
+        example: "=AVERAGE(A1:A10)",
+        params: [
+            {name: "number1", type: "必需", desc: "第一个数值/区域"},
+            {name: "[number2]", type: "可选", desc: "其他数值/区域"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "AVERAGE-IF-ARRAY": {
+        category: "统计",
+        desc: "数组条件平均值计算",
+        syntax: "AVERAGE(IF((range1=criteria1)*(range2=criteria2), value_range))",
+        example: "=AVERAGE(IF((A2:A100=\"销售部\")*(B2:B100>5000), C2:C100))",
+        params: [
+            {name: "range1", type: "必需", desc: "第一个条件范围"},
+            {name: "criteria1", type: "必需", desc: "第一个条件"},
+            {name: "range2", type: "必需", desc: "第二个条件范围"},
+            {name: "criteria2", type: "必需", desc: "第二个条件"},
+            {name: "value_range", type: "必需", desc: "计算平均值范围"}
+        ],
+        versions: ["Excel 2007+"]
+    },
+
+    "COUNT": {
+        category: "统计",
+        desc: "计算包含数字的单元格数量",
+        syntax: "COUNT(value1, [value2], ...)",
+        example: "=COUNT(A1:A10, C1:C5)",
+        params: [
+            {name: "value1", type: "必需", desc: "第一个要计数的值/区域"},
+            {name: "[value2]", type: "可选", desc: "其他要计数的值/区域"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "COUNTIF-SUMPRODUCT": {
+        category: "统计",
+        desc: "多列条件计数组合",
+        syntax: "SUMPRODUCT((range1=criteria1)*(range2=criteria2))",
+        example: "=SUMPRODUCT((A2:A100=\"男\")*(B2:B100>18))",
+        params: [
+            {name: "range1", type: "必需", desc: "第一个条件范围"},
+            {name: "criteria1", type: "必需", desc: "第一个条件"},
+            {name: "range2", type: "必需", desc: "第二个条件范围"},
+            {name: "criteria2", type: "必需", desc: "第二个条件"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "COUNTIFS": {
+        category: "统计",
+        desc: "统计满足多个条件的单元格数量",
+        syntax: "COUNTIFS(criteria_range1, criteria1, [criteria_range2, criteria2], ...)",
+        example: "=COUNTIFS(A2:A100, \">20\", B2:B100, \"<50\")",
+        params: [
+            {name: "criteria_range1", type: "必需", desc: "第一个条件区域"},
+            {name: "criteria1", type: "必需", desc: "第一个条件"},
+            {name: "[criteria_range2]", type: "可选", desc: "其他条件区域"},
+            {name: "[criteria2]", type: "可选", desc: "其他条件"}
+        ],
+        versions: ["Excel 2007+"]
+    },
+
+    "LARGE": {
+        category: "统计",
+        desc: "返回数据集中第k个最大值",
+        syntax: "LARGE(array, k)",
+        example: "=LARGE(A1:A100, 3)",
+        params: [
+            {name: "array", type: "必需", desc: "数据集区域或数组"},
+            {name: "k", type: "必需", desc: "返回值的排位"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "MAX": {
+        category: "统计",
+        desc: "返回一组数值中的最大值",
+        syntax: "MAX(number1, [number2], ...)",
+        example: "=MAX(A1:A10, 100)",
+        params: [
+            {name: "number1", type: "必需", desc: "第一个数值/区域"},
+            {name: "[number2]", type: "可选", desc: "其他数值/区域"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "MEDIAN": {
+        category: "统计",
+        desc: "返回一组数字的中值",
+        syntax: "MEDIAN(number1, [number2], ...)",
+        example: "=MEDIAN(A2:A100)",
+        params: [
+            {name: "number1", type: "必需", desc: "第一个数值/区域"},
+            {name: "[number2]", type: "可选", desc: "其他数值/区域"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "MIN": {
+        category: "统计",
+        desc: "返回一组数值中的最小值",
+        syntax: "MIN(number1, [number2], ...)",
+        example: "=MIN(B2:B20, 0)",
+        params: [
+            {name: "number1", type: "必需", desc: "第一个数值/区域"},
+            {name: "[number2]", type: "可选", desc: "其他数值/区域"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "RANK": {
+        category: "统计",
+        desc: "返回数值在数据集中的排名",
+        syntax: "RANK(number, ref, [order])",
+        example: "=RANK(A2, A:A, 0)",
+        params: [
+            {name: "number", type: "必需", desc: "要排名的数值"},
+            {name: "ref", type: "必需", desc: "数据范围"},
+            {name: "[order]", type: "可选", desc: "0=降序（默认），1=升序"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "STDEV.P": {
+        category: "统计",
+        desc: "计算基于整个样本总体的标准偏差",
+        syntax: "STDEV.P(number1, [number2], ...)",
+        example: "=STDEV.P(A2:A100)",
+        params: [
+            {name: "number1", type: "必需", desc: "第一个数值/区域"},
+            {name: "[number2]", type: "可选", desc: "其他数值/区域"}
+        ],
+        versions: ["Excel 2010+"]
+    },
+
+    "AREAS": {
+        category: "查找与引用",
+        desc: "返回引用中的区域个数",
+        syntax: "AREAS(reference)",
+        example: "=AREAS((A1:B3,C5:D7)) 返回2",
+        params: [
+            {name: "reference", type: "必需", desc: "单元格引用"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ADDRESS": {
+        category: "查找与引用",
+        desc: "根据行号和列号创建单元格地址",
+        syntax: "ADDRESS(row_num, column_num, [abs_num], [a1], [sheet_text])",
+        example: "=ADDRESS(3,4) 返回\"$D$3\"",
+        params: [
+            {name: "row_num", type: "必需", desc: "行号"},
+            {name: "column_num", type: "必需", desc: "列号"},
+            {name: "[abs_num]", type: "可选", desc: "引用类型（1-绝对，4-相对）"},
+            {name: "[a1]", type: "可选", desc: "TRUE=A1样式，FALSE=R1C1样式"},
+            {name: "[sheet_text]", type: "可选", desc: "工作表名称"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "CHOOSE": {
+        category: "查找与引用",
+        desc: "根据索引号从值列表中选择值",
+        syntax: "CHOOSE(index_num, value1, [value2], ...)",
+        example: "=CHOOSE(2, \"优\", \"良\", \"差\") 返回\"良\"",
+        params: [
+            {name: "index_num", type: "必需", desc: "选择位置的数字（从1开始）"},
+            {name: "value1", type: "必需", desc: "第一个可选值"},
+            {name: "[value2]", type: "可选", desc: "其他可选值"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "COLUMN": {
+        category: "查找与引用",
+        desc: "返回引用的列号",
+        syntax: "COLUMN([reference])",
+        example: "=COLUMN(D1) 返回4",
+        params: [
+            {name: "[reference]", type: "可选", desc: "要获取列号的单元格引用"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "COLUMNS": {
+        category: "查找与引用",
+        desc: "返回数组或引用的列数",
+        syntax: "COLUMNS(array)",
+        example: "=COLUMNS(A1:D1) 返回4",
+        params: [
+            {name: "array", type: "必需", desc: "单元格区域或数组"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "HLOOKUP": {
+        category: "查找与引用",
+        desc: "在表格的首行查找指定值并返回指定行的值",
+        syntax: "HLOOKUP(lookup_value, table_array, row_index_num, [range_lookup])",
+        example: "=HLOOKUP(A2, B1:E100, 3, FALSE)",
+        params: [
+            {name: "lookup_value", type: "必需", desc: "要查找的值"},
+            {name: "table_array", type: "必需", desc: "包含数据的区域"},
+            {name: "row_index_num", type: "必需", desc: "返回值的行号"},
+            {name: "[range_lookup]", type: "可选", desc: "近似/精确匹配"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "INDEX": {
+        category: "查找与引用",
+        desc: "返回表格或区域中的值或值的引用",
+        syntax: "INDEX(array, row_num, [column_num])",
+        example: "=INDEX(A1:C10, 3, 2)",
+        params: [
+            {name: "array", type: "必需", desc: "单元格区域或数组"},
+            {name: "row_num", type: "必需", desc: "行位置"},
+            {name: "[column_num]", type: "可选", desc: "列位置"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "INDEX-MATCH": {
+        category: "查找与引用",
+        desc: "双向查找组合（替代VLOOKUP的灵活解决方案）",
+        syntax: "INDEX(return_range, MATCH(lookup_value, lookup_range, [match_type]))",
+        example: "=INDEX(C2:C100, MATCH(A2, B2:B100, 0))",
+        params: [
+            {name: "lookup_value", type: "必需", desc: "要查找的值"},
+            {name: "lookup_range", type: "必需", desc: "查找范围（单列/行）"},
+            {name: "return_range", type: "必需", desc: "返回值范围"},
+            {name: "[match_type]", type: "可选", desc: "0=精确 1=近似"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "INDEX-MATCH-MAX": {
+        category: "查找与引用",
+        desc: "查找最大值对应信息组合",
+        syntax: "INDEX(return_range,MATCH(MAX(value_range),value_range,0))",
+        example: "=INDEX(B:B,MATCH(MAX(C:C),C:C,0))",
+        params: [
+            {name: "value_range", type: "必需", desc: "数值区域"},
+            {name: "return_range", type: "必需", desc: "返回信息区域"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "INDEX-SMALL-IF": {
+        category: "查找与引用",
+        desc: "多条件筛选返回多个结果",
+        syntax: "INDEX(return_range, SMALL(IF(condition, ROW(...)), ROW(1:1)))",
+        example: "=INDEX(B2:B100, SMALL(IF(A2:A100=\"合格\", ROW(A2:A100)-ROW(A2)+1), ROW(A1)))",
+        params: [
+            {name: "condition", type: "必需", desc: "筛选条件表达式"},
+            {name: "return_range", type: "必需", desc: "返回结果范围"},
+            {name: "row_offset", type: "必需", desc: "行号偏移量"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "INDIRECT": {
+        category: "查找与引用",
+        desc: "返回由文本字符串指定的引用",
+        syntax: "INDIRECT(ref_text, [a1])",
+        example: "=INDIRECT(\"A\"&B1)",
+        params: [
+            {name: "ref_text", type: "必需", desc: "表示单元格引用的文本"},
+            {name: "[a1]", type: "可选", desc: "引用样式（TRUE=A1样式，FALSE=R1C1样式）"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "INDIRECT-DYNAMIC": {
+        category: "查找与引用",
+        desc: "动态引用组合",
+        syntax: "INDIRECT(ADDRESS(row_num, column_num))",
+        example: "=INDIRECT(\"Sheet1!\"&ADDRESS(ROW(), COLUMN()))",
+        params: [
+            {name: "row_num", type: "必需", desc: "行号"},
+            {name: "column_num", type: "必需", desc: "列号"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "LOOKUP": {
+        category: "查找与引用",
+        desc: "在单行/列范围中查找值并返回第二个单行/列范围中对应位置的值",
+        syntax: "LOOKUP(lookup_value, lookup_vector, [result_vector])",
+        example: "=LOOKUP(A2, B2:B100, C2:C100)",
+        params: [
+            {name: "lookup_value", type: "必需", desc: "要查找的值"},
+            {name: "lookup_vector", type: "必需", desc: "单行/列的查找范围"},
+            {name: "[result_vector]", type: "可选", desc: "单行/列的返回范围"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "MATCH": {
+        category: "查找与引用",
+        desc: "在范围中搜索指定项并返回相对位置",
+        syntax: "MATCH(lookup_value, lookup_array, [match_type])",
+        example: "=MATCH(A2, B2:B100, 0)",
+        params: [
+            {name: "lookup_value", type: "必需", desc: "要匹配的值"},
+            {name: "lookup_array", type: "必需", desc: "搜索范围"},
+            {name: "[match_type]", type: "可选", desc: "1=近似（默认）, 0=精确, -1=降序"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "OFFSET": {
+        category: "查找与引用",
+        desc: "从给定起始点返回单元格区域引用",
+        syntax: "OFFSET(reference, rows, cols, [height], [width])",
+        example: "=OFFSET(A1, 2, 3, 1, 1)",
+        params: [
+            {name: "reference", type: "必需", desc: "起始参考点"},
+            {name: "rows", type: "必需", desc: "上下偏移行数（正数向下）"},
+            {name: "cols", type: "必需", desc: "左右偏移列数（正数向右）"},
+            {name: "[height]", type: "可选", desc: "返回区域的高度"},
+            {name: "[width]", type: "可选", desc: "返回区域的宽度"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ROW": {
+        category: "查找与引用",
+        desc: "返回引用的行号",
+        syntax: "ROW([reference])",
+        example: "=ROW(A10) 返回10",
+        params: [
+            {name: "[reference]", type: "可选", desc: "要获取行号的单元格引用"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ROWS": {
+        category: "查找与引用",
+        desc: "返回引用区域的行数",
+        syntax: "ROWS(array)",
+        example: "=ROWS(A1:C10) 返回10",
+        params: [
+            {name: "array", type: "必需", desc: "单元格区域或数组"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "TRANSPOSE": {
+        category: "查找与引用",
+        desc: "转置数组的行列方向",
+        syntax: "TRANSPOSE(array)",
+        example: "=TRANSPOSE(A1:C5)",
+        params: [
+            {name: "array", type: "必需", desc: "要转置的二维数组"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+            "VLOOKUP": {
+                category: "查找与引用",
+                desc: "在表格的首列查找指定值并返回指定列的值",
+                syntax: "VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])",
+                example: "=VLOOKUP(A2, B2:E100, 3, FALSE)",
+                params: [
+                    {name: "lookup_value", type: "必需", desc: "要查找的值"},
+                    {name: "table_array", type: "必需", desc: "包含数据的区域"},
+                    {name: "col_index_num", type: "必需", desc: "返回值的列号"},
+                    {name: "[range_lookup]", type: "可选", desc: "近似/精确匹配"}  
+                ],
+                versions: ["Excel 2003+"]
+            },
+
+    "XLOOKUP": {
+        category: "查找与引用",
+        desc: "在范围或数组中搜索指定项并返回相应结果",
+        syntax: "XLOOKUP(lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode])",
+        example: "=XLOOKUP(A2, B2:B100, D2:D100)",
+        params: [
+            {name: "lookup_value", type: "必需", desc: "要查找的值"},
+            {name: "lookup_array", type: "必需", desc: "要搜索的数组"},
+            {name: "return_array", type: "必需", desc: "返回结果的数组"},
+            {name: "[if_not_found]", type: "可选", desc: "未找到时的返回值"},
+            {name: "[match_mode]", type: "可选", desc: "匹配类型"},
+            {name: "[search_mode]", type: "可选", desc: "搜索模式"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "XLOOKUP-FILTER": {
+        category: "查找与引用",
+        desc: "动态数组查找组合",
+        syntax: "XLOOKUP(lookup_value, FILTER(lookup_array, condition), return_array)",
+        example: "=XLOOKUP(A2, FILTER(B2:B100, C2:C100>100), D2:D100)",
+        params: [
+            {name: "lookup_value", type: "必需", desc: "查找值"},
+            {name: "condition", type: "必需", desc: "过滤条件"},
+            {name: "return_array", type: "必需", desc: "返回范围"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "XMATCH": {
+        category: "查找与引用",
+        desc: "返回项目在数组或单元格区域中的相对位置",
+        syntax: "XMATCH(lookup_value, lookup_array, [match_mode], [search_mode])",
+        example: "=XMATCH(\"苹果\",A2:A100)",
+        params: [
+            {name: "lookup_value", type: "必需", desc: "要查找的值"},
+            {name: "lookup_array", type: "必需", desc: "要搜索的单元格区域"},
+            {name: "[match_mode]", type: "可选", desc: "指定匹配类型（0=精确，-1=近似等）"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "ABS": {
+        category: "数学",
+        desc: "返回数值的绝对值",
+        syntax: "ABS(number)",
+        example: "=ABS(-5.5) 返回5.5",
+        params: [
+            {name: "number", type: "必需", desc: "要计算绝对值的数值"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "AGGREGATE": {
+        category: "数学",
+        desc: "应用多种函数并忽略错误值或隐藏行",
+        syntax: "AGGREGATE(function_num, options, array, [k])",
+        example: "=AGGREGATE(14,6,A2:A100)",
+        params: [
+            {name: "function_num", type: "必需", desc: "函数代码（1-19）"},
+            {name: "options", type: "必需", desc: "忽略选项（0-7组合）"},
+            {name: "array", type: "必需", desc: "数据区域"}
+        ],
+        versions: ["Excel 2010+"]
+    },
+
+    "CEILING": {
+        category: "数学",
+        desc: "将数字向上舍入到指定基数的倍数",
+        syntax: "CEILING(number, significance)",
+        example: "=CEILING(4.3, 0.5) 返回4.5",
+        params: [
+            {name: "number", type: "必需", desc: "要舍入的数字"},
+            {name: "significance", type: "必需", desc: "舍入基数"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "CEILING.MATH": {
+        category: "数学",
+        desc: "向上舍入到最接近的指定基数的倍数",
+        syntax: "CEILING.MATH(number, [significance], [mode])",
+        example: "=CEILING.MATH(4.3, 0.5) 返回4.5",
+        params: [
+            {name: "number", type: "必需", desc: "要舍入的值"},
+            {name: "[significance]", type: "可选", desc: "舍入基数（默认1）"},
+            {name: "[mode]", type: "可选", desc: "负数舍入方式（默认远离0）"}
+        ],
+        versions: ["Excel 2013+"]
+    },
+
+    "FLOOR": {
+        category: "数学",
+        desc: "将数字向下舍入到指定基数的倍数",
+        syntax: "FLOOR(number, significance)",
+        example: "=FLOOR(4.8, 0.5) 返回4.5",
+        params: [
+            {name: "number", type: "必需", desc: "要舍入的数字"},
+            {name: "significance", type: "必需", desc: "舍入基数"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "FLOOR.MATH": {
+        category: "数学",
+        desc: "向下舍入到最接近的指定基数的倍数",
+        syntax: "FLOOR.MATH(number, [significance], [mode])",
+        example: "=FLOOR.MATH(4.8, 0.5) 返回4.5",
+        params: [
+            {name: "number", type: "必需", desc: "要舍入的值"},
+            {name: "[significance]", type: "可选", desc: "舍入基数（默认1）"},
+            {name: "[mode]", type: "可选", desc: "负数舍入方式（默认接近0）"}
+        ],
+        versions: ["Excel 2013+"]
+    },
+
+    "MOD": {
+        category: "数学",
+        desc: "返回两数相除的余数",
+        syntax: "MOD(number, divisor)",
+        example: "=MOD(10, 3) 返回1",
+        params: [
+            {name: "number", type: "必需", desc: "被除数"},
+            {name: "divisor", type: "必需", desc: "除数"}
+        ],
+        versions: ["Excel 2003+"]
+     },
+
+"PERCENTOF": {
+    category: "数学",
+    desc: "计算值占总值的百分比",
+    syntax: "=value/SUM(range)",
+    example: "=B2/SUM(B$2:B$10)",
+    params: [
+        {name: "value", type: "必需", desc: "分子数值"},
+        {name: "range", type: "必需", desc: "分母求和范围"}
+    ],
+    versions: ["Excel 2003+"]
+},
+
+    "RAND": {
+        category: "数学",
+        desc: "返回0到1之间的随机数",
+        syntax: "RAND()",
+        example: "=RAND()",
+        params: [],
+        versions: ["Excel 2003+"]
+    },
+
+    "ROMAN": {
+        category: "数学",
+        desc: "将阿拉伯数字转换为罗马数字",
+        syntax: "ROMAN(number, [form])",
+        example: "=ROMAN(2023) 返回\"MMXXIII\"",
+        params: [
+            {name: "number", type: "必需", desc: "1-3999之间的整数"},
+            {name: "[form]", type: "可选", desc: "格式类型（0-4）"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ROUND": {
+        category: "数学",
+        desc: "按指定位数四舍五入数字",
+        syntax: "ROUND(number, num_digits)",
+        example: "=ROUND(3.1415, 2) 返回3.14",
+        params: [
+            {name: "number", type: "必需", desc: "要舍入的数值"},
+            {name: "num_digits", type: "必需", desc: "舍入位数"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ROUNDDOWN": {
+        category: "数学",
+        desc: "向下舍入数字",
+        syntax: "ROUNDDOWN(number, num_digits)",
+        example: "=ROUNDDOWN(3.14159, 2) 返回3.14",
+        params: [
+            {name: "number", type: "必需", desc: "要舍入的数字"},
+            {name: "num_digits", type: "必需", desc: "舍入位数"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ROUNDUP": {
+        category: "数学",
+        desc: "向上舍入数字",
+        syntax: "ROUNDUP(number, num_digits)",
+        example: "=ROUNDUP(3.14159, 2) 返回3.15",
+        params: [
+            {name: "number", type: "必需", desc: "要舍入的数字"},
+            {name: "num_digits", type: "必需", desc: "舍入位数"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "SUBTOTAL-AGGREGATE": {
+        category: "数学",
+        desc: "智能分类汇总组合",
+        syntax: "SUBTOTAL(function_num, ref1, [ref2], ...)",
+        example: "=SUBTOTAL(9, A2:A100)/SUBTOTAL(2, A2:A100)",
+        params: [
+            {name: "function_num", type: "必需", desc: "函数代码（1-11）"},
+            {name: "range", type: "必需", desc: "计算范围"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "SUM-ARRAY-CRITERIA": {
+        category: "数学",
+        desc: "数组条件求和组合（替代SUMIFS的多维计算）",
+        syntax: "SUMPRODUCT((range1=criteria1)*(range2=criteria2)*sum_range)",
+        example: "=SUMPRODUCT((A2:A100=\"北京\")*(B2:B100>1000)*C2:C100)",
+        params: [
+            {name: "range1", type: "必需", desc: "第一个条件范围"},
+            {name: "criteria1", type: "必需", desc: "第一个条件"},
+            {name: "range2", type: "必需", desc: "第二个条件范围"},
+            {name: "criteria2", type: "必需", desc: "第二个条件"},
+            {name: "sum_range", type: "必需", desc: "求和范围"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "SUM": {
+        category: "数学",
+        desc: "计算一组数值的总和",
+        syntax: "SUM(number1, [number2], ...)",
+        example: "=SUM(A1:A10)",
+        params: [
+            {name: "number1", type: "必需", desc: "第一个相加的数字"},
+            {name: "[number2]", type: "可选", desc: "其他要相加的数字"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "SUMIFS-MULTICRITERIA": {
+        category: "数学",
+        desc: "多条件求和组合",
+        syntax: "SUMIFS(sum_range, criteria_range1, criteria1, [criteria_range2], [criteria2], ...)",
+        example: "=SUMIFS(C2:C100, A2:A100, \">2023-01-01\", B2:B100, \"完成\")",
+        params: [
+            {name: "sum_range", type: "必需", desc: "求和范围"},
+            {name: "criteria_range", type: "必需", desc: "条件范围"},
+            {name: "criteria", type: "必需", desc: "判断条件"}
+        ],
+        versions: ["Excel 2007+"]
+    },
+
+    "SUMPRODUCT": {
+        category: "数学",
+        desc: "将多个数组的对应元素相乘后求和",
+        syntax: "SUMPRODUCT(array1, [array2], ...)",
+        example: "=SUMPRODUCT(A2:A10, B2:B10)",
+        params: [
+            {name: "array1", type: "必需", desc: "第一个数组"},
+            {name: "[array2]", type: "可选", desc: "其他相乘数组"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+"SUMIF": {
+    category: "数学与三角",
+    desc: "按条件求和",
+    syntax: "SUMIF(range, criteria, [sum_range])",
+    example: "=SUMIF(A2:A10, \">20\", B2:B10)",
+    params: [
+        {name: "range", type: "必需", desc: "条件判断区域"},
+        {name: "criteria", type: "必需", desc: "求和条件"},
+        {name: "[sum_range]", type: "可选", desc: "实际求和区域"}
+    ],
+    versions: ["Excel 2003+"]
+},
+
+    "CONCAT": {
+        category: "文本",
+        desc: "合并多个文本字符串",
+        syntax: "CONCAT(text1, [text2], ...)",
+        example: "=CONCAT(A2, \"-\", B2)",
+        params: [
+            {name: "text1", type: "必需", desc: "第一个文本项"},
+            {name: "[text2]", type: "可选", desc: "其他文本项"}
+        ],
+        versions: ["Excel 2019+"]
+    },
+
+    "FIND": {
+        category: "文本",
+        desc: "查找字符串在文本中的位置（区分大小写）",
+        syntax: "FIND(find_text, within_text, [start_num])",
+        example: "=FIND(\"e\", \"Excel\") 返回2",
+        params: [
+            {name: "find_text", type: "必需", desc: "要查找的文本"},
+            {name: "within_text", type: "必需", desc: "包含要查找文本的字符串"},
+            {name: "[start_num]", type: "可选", desc: "开始搜索的位置"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "LEFT": {
+        category: "文本",
+        desc: "从文本左侧提取指定数量的字符",
+        syntax: "LEFT(text, [num_chars])",
+        example: "=LEFT(\"Excel\", 2) 返回\"Ex\"",
+        params: [
+            {name: "text", type: "必需", desc: "源文本字符串"},
+            {name: "[num_chars]", type: "可选", desc: "要提取的字符数（默认1）"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "LEN": {
+        category: "文本",
+        desc: "返回文本字符串的字符数",
+        syntax: "LEN(text)",
+        example: "=LEN(\"Excel\") 返回5",
+        params: [
+            {name: "text", type: "必需", desc: "要计算长度的文本"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "LOWER": {
+        category: "文本",
+        desc: "将文本转换为小写",
+        syntax: "LOWER(text)",
+        example: "=LOWER(\"Excel\") 返回\"excel\"",
+        params: [
+            {name: "text", type: "必需", desc: "要转换的文本"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "MID": {
+        category: "文本",
+        desc: "从文本字符串中提取指定位置和长度的字符",
+        syntax: "MID(text, start_num, num_chars)",
+        example: "=MID(\"Hello World\", 7, 5) 返回\"World\"",
+        params: [
+            {name: "text", type: "必需", desc: "源文本字符串"},
+            {name: "start_num", type: "必需", desc: "开始位置（从1开始）"},
+            {name: "num_chars", type: "必需", desc: "要提取的字符数"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "PROPER": {
+        category: "文本",
+        desc: "将文本转换为首字母大写形式",
+        syntax: "PROPER(text)",
+        example: "=PROPER(\"excel FUNCTIONS\") 返回\"Excel Functions\"",
+        params: [
+            {name: "text", type: "必需", desc: "要转换的文本"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "REPLACE": {
+        category: "文本",
+        desc: "根据位置替换文本中的字符",
+        syntax: "REPLACE(old_text, start_num, num_chars, new_text)",
+        example: "=REPLACE(\"2023-01\", 6, 2, \"12\") 返回\"2023-12\"",
+        params: [
+            {name: "old_text", type: "必需", desc: "原文本"},
+            {name: "start_num", type: "必需", desc: "开始位置"},
+            {name: "num_chars", type: "必需", desc: "替换字符数"},
+            {name: "new_text", type: "必需", desc: "新文本"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "REPT": {
+        category: "文本",
+        desc: "重复文本指定次数",
+        syntax: "REPT(text, number_times)",
+        example: "=REPT(\"★\", 5) 返回★★★★★",
+        params: [
+            {name: "text", type: "必需", desc: "要重复的文本"},
+            {name: "number_times", type: "必需", desc: "重复次数"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "RIGHT": {
+        category: "文本",
+        desc: "从文本右侧提取指定数量的字符",
+        syntax: "RIGHT(text, [num_chars])",
+        example: "=RIGHT(\"Excel\", 3) 返回\"cel\"",
+        params: [
+            {name: "text", type: "必需", desc: "源文本字符串"},
+            {name: "[num_chars]", type: "可选", desc: "要提取的字符数（默认1）"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "SEARCH": {
+        category: "文本",
+        desc: "查找字符串在文本中的位置（不区分大小写）",
+        syntax: "SEARCH(find_text, within_text, [start_num])",
+        example: "=SEARCH(\"e\", \"Excel\") 返回1",
+        params: [
+            {name: "find_text", type: "必需", desc: "要查找的文本"},
+            {name: "within_text", type: "必需", desc: "被搜索的文本"},
+            {name: "[start_num]", type: "可选", desc: "起始位置（默认1）"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "SUBSTITUTE": {
+        category: "文本",
+        desc: "替换文本中的特定字符串",
+        syntax: "SUBSTITUTE(text, old_text, new_text, [instance_num])",
+        example: "=SUBSTITUTE(\"A-B-C\", \"-\", \"/\") 返回\"A/B/C\"",
+        params: [
+            {name: "text", type: "必需", desc: "原文本"},
+            {name: "old_text", type: "必需", desc: "要替换的文本"},
+            {name: "new_text", type: "必需", desc: "新文本"},
+            {name: "[instance_num]", type: "可选", desc: "替换第N次出现的位置"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "TEXT": {
+        category: "文本",
+        desc: "将数值转换为指定格式的文本",
+        syntax: "TEXT(value, format_text)",
+        example: "=TEXT(TODAY(),\"yyyy-mm-dd\")",
+        params: [
+            {name: "value", type: "必需", desc: "要转换的数值"},
+            {name: "format_text", type: "必需", desc: "格式代码"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "TEXTAFTER": {
+        category: "文本",
+        desc: "提取分隔符后的文本",
+        syntax: "TEXTAFTER(text, delimiter, [instance_num])",
+        example: "=TEXTAFTER(A1,\"@\")",
+        params: [
+            {name: "text", type: "必需", desc: "源文本字符串"},
+            {name: "delimiter", type: "必需", desc: "分隔符"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "TEXTBEFORE": {
+        category: "文本",
+        desc: "提取分隔符前的文本",
+        syntax: "TEXTBEFORE(text, delimiter, [instance_num])",
+        example: "=TEXTBEFORE(A1,\"@\")",
+        params: [
+            {name: "text", type: "必需", desc: "源文本字符串"},
+            {name: "delimiter", type: "必需", desc: "分隔符"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "TEXTJOIN": {
+        category: "文本",
+        desc: "使用分隔符连接区域或字符串",
+        syntax: "TEXTJOIN(delimiter, ignore_empty, text1, [text2], ...)",
+        example: "=TEXTJOIN(\",\",TRUE,A2:A10)",
+        params: [
+            {name: "delimiter", type: "必需", desc: "分隔符（可以是空字符串）"},
+            {name: "ignore_empty", type: "必需", desc: "是否忽略空单元格"},
+            {name: "text1", type: "必需", desc: "要连接的第一个项"}
+        ],
+        versions: ["Excel 2019+"]
+    },
+
+    "TEXTJOIN-DELIMITED": {
+        category: "文本",
+        desc: "多条件文本合并组合",
+        syntax: "TEXTJOIN(delimiter, ignore_empty, text1, [text2], ...)",
+        example: "=TEXTJOIN(\", \", TRUE, A2:A10)",
+        params: [
+            {name: "delimiter", type: "必需", desc: "分隔符"},
+            {name: "ignore_empty", type: "必需", desc: "是否忽略空值"},
+            {name: "text_range", type: "必需", desc: "要合并的范围"}
+        ],
+        versions: ["Excel 2019+"]
+    },
+
+    "TEXTSPLIT": {
+        category: "文本",
+        desc: "根据分隔符拆分文本字符串",
+        syntax: "TEXTSPLIT(text, col_delimiter, [row_delimiter], [ignore_empty])",
+        example: "=TEXTSPLIT(A1,\",\")",
+        params: [
+            {name: "text", type: "必需", desc: "要拆分的文本"},
+            {name: "col_delimiter", type: "必需", desc: "列分隔符"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "TRIM": {
+        category: "文本",
+        desc: "删除文本中的多余空格（保留单词间单个空格）",
+        syntax: "TRIM(text)",
+        example: "=TRIM(\"  Excel   Functions  \") 返回\"Excel Functions\"",
+        params: [
+            {name: "text", type: "必需", desc: "需要清理空格的文本"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "UPPER": {
+        category: "文本",
+        desc: "将文本转换为大写",
+        syntax: "UPPER(text)",
+        example: "=UPPER(\"excel\") 返回\"EXCEL\"",
+        params: [
+            {name: "text", type: "必需", desc: "要转换的文本"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "VALUE": {
+        category: "文本",
+        desc: "将文本格式的数字转换为数值",
+        syntax: "VALUE(text)",
+        example: "=VALUE(\"123.45\") 返回123.45",
+        params: [
+            {name: "text", type: "必需", desc: "要转换的文本"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "AND": {
+        category: "逻辑",
+        desc: "所有参数为TRUE时返回TRUE",
+        syntax: "AND(logical1, [logical2], ...)",
+        example: "=AND(A1>10, B1<20)",
+        params: [
+            {name: "logical1", type: "必需", desc: "第一个逻辑条件"},
+            {name: "[logical2]", type: "可选", desc: "其他逻辑条件"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+"IF": {
+    category: "逻辑",
+    desc: "条件判断函数",
+    syntax: "IF(logical_test, value_if_true, [value_if_false])",
+    example: "=IF(A1>10, \"合格\", \"不合格\")",
+    params: [
+        {name: "logical_test", type: "必需", desc: "逻辑条件"},
+        {name: "value_if_true", type: "必需", desc: "条件为真时返回值"},
+        {name: "[value_if_false]", type: "可选", desc: "条件为假时返回值"}
+    ],
+    versions: ["Excel 2003+"]
+},
+
+   "IF-AND-OR": {
+        category: "逻辑",
+        desc: "复杂条件判断组合",
+        syntax: "IF(AND(cond1, OR(cond2, cond3)), value_if_true, value_if_false)",
+        example: "=IF(AND(A2>60, OR(B2=\"通过\", C2>5)), \"合格\", \"不合格\")",
+        params: [
+            {name: "cond1", type: "必需", desc: "主条件"},
+            {name: "cond2", type: "必需", desc: "次级条件1"},
+            {name: "cond3", type: "必需", desc: "次级条件2"},
+            {name: "true_value", type: "必需", desc: "满足时返回值"},
+            {name: "false_value", type: "必需", desc: "不满足时返回值"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "IFERROR": {
+        category: "逻辑",
+        desc: "如果公式计算结果错误则返回指定值",
+        syntax: "IFERROR(value, value_if_error)",
+        example: "=IFERROR(A2/B2, \"Error\")",
+        params: [
+            {name: "value", type: "必需", desc: "要检查的公式"},
+            {name: "value_if_error", type: "必需", desc: "错误时返回的值"}
+        ],
+        versions: ["Excel 2007+"]
+    },
+
+    "IFNA": {
+        category: "逻辑",
+        desc: "当公式结果为#N/A错误时返回指定值",
+        syntax: "IFNA(value, value_if_na)",
+        example: "=IFNA(VLOOKUP(A2,B1:C10,2,FALSE), \"未找到\")",
+        params: [
+            {name: "value", type: "必需", desc: "要检查的公式"},
+            {name: "value_if_na", type: "必需", desc: "错误时返回的值"}
+        ],
+        versions: ["Excel 2013+"]
+    },
+
+    "IFS": {
+        category: "逻辑",
+        desc: "检查多个条件并返回第一个为TRUE的结果",
+        syntax: "IFS(condition1, value1, [condition2], [value2], ...)",
+        example: "=IFS(A1>90,\"优\",A1>80,\"良\",TRUE,\"差\")",
+        params: [
+            {name: "condition1", type: "必需", desc: "第一个逻辑条件"},
+            {name: "value1", type: "必需", desc: "第一个条件为真时返回的值"},
+            {name: "[condition2]", type: "可选", desc: "其他逻辑条件"},
+            {name: "[value2]", type: "可选", desc: "其他返回值"}
+        ],
+        versions: ["Excel 2019+"]
+    },
+
+    "OR": {
+        category: "逻辑",
+        desc: "如果任一参数为TRUE则返回TRUE",
+        syntax: "OR(logical1, [logical2], ...)",
+        example: "=OR(A1>10, B1<5)",
+        params: [
+            {name: "logical1", type: "必需", desc: "第一个逻辑条件"},
+            {name: "[logical2]", type: "可选", desc: "其他逻辑条件"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "SWITCH": {
+        category: "逻辑",
+        desc: "根据表达式匹配多个可能值",
+        syntax: "SWITCH(expression, value1, result1, [default_or_value2], [result2], ...)",
+        example: "=SWITCH(WEEKDAY(A1),1,\"日\",2,\"一\",\"未知\")",
+        params: [
+            {name: "expression", type: "必需", desc: "要比较的表达式"},
+            {name: "value1", type: "必需", desc: "第一个匹配值"}
+        ],
+        versions: ["Excel 2019+"]
+    },
+
+    "INFO": {
+        category: "信息",
+        desc: "返回当前操作环境的信息",
+        syntax: "INFO(type_text)",
+        example: "=INFO(\"directory\") 返回当前文件夹路径",
+        params: [
+            {name: "type_text", type: "必需", desc: "信息类型（\"directory\",\"numfile\"等）"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ISBLANK": {
+        category: "信息",
+        desc: "检查单元格是否为空",
+        syntax: "ISBLANK(value)",
+        example: "=ISBLANK(A1)",
+        params: [
+            {name: "value", type: "必需", desc: "要检查的单元格"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ISERROR": {
+        category: "信息",
+        desc: "检查值是否为错误类型",
+        syntax: "ISERROR(value)",
+        example: "=ISERROR(A1/B1)",
+        params: [
+            {name: "value", type: "必需", desc: "要检查的值"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ISFORMULA": {
+        category: "信息",
+        desc: "检查单元格是否包含公式",
+        syntax: "ISFORMULA(reference)",
+        example: "=ISFORMULA(A1)",
+        params: [
+            {name: "reference", type: "必需", desc: "要检查的单元格引用"}
+        ],
+        versions: ["Excel 2013+"]
+    },
+
+    "ISNUMBER": {
+        category: "信息",
+        desc: "检查值是否为数字",
+        syntax: "ISNUMBER(value)",
+        example: "=ISNUMBER(A2)",
+        params: [
+            {name: "value", type: "必需", desc: "要检查的值"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ISTEXT": {
+        category: "信息",
+        desc: "检查值是否为文本",
+        syntax: "ISTEXT(value)",
+        example: "=ISTEXT(A2)",
+        params: [
+            {name: "value", type: "必需", desc: "要检查的值"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "TYPE": {
+        category: "信息",
+        desc: "返回数值的数据类型代码",
+        syntax: "TYPE(value)",
+        example: "=TYPE(\"Excel\") 返回2",
+        params: [
+            {name: "value", type: "必需", desc: "要检查的值"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "DATE": {
+        category: "日期与时间",
+        desc: "根据年/月/日创建标准日期",
+        syntax: "DATE(year, month, day)",
+        example: "=DATE(2023,12,31) 返回2023/12/31",
+        params: [
+            {name: "year", type: "必需", desc: "年份（1900-9999）"},
+            {name: "month", type: "必需", desc: "月份（可超过12自动进位）"},
+            {name: "day", type: "必需", desc: "日期（可超过当月天数自动进位）"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "DATEDIF-CALCULATE": {
+        category: "日期与时间",
+        desc: "精确日期差计算组合",
+        syntax: "DATEDIF(start_date, end_date, unit)",
+        example: "=DATEDIF(A2, TODAY(), \"Y\") & \"年\"",
+        params: [
+            {name: "start_date", type: "必需", desc: "开始日期"},
+            {name: "end_date", type: "必需", desc: "结束日期"},
+            {name: "unit", type: "必需", desc: "单位代码（Y/M/D等）"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "DAY": {
+        category: "日期与时间",
+        desc: "返回日期中的天数（1-31）",
+        syntax: "DAY(serial_number)",
+        example: "=DAY(\"2023-12-25\") 返回25",
+        params: [
+            {name: "serial_number", type: "必需", desc: "日期值"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "DAYS": {
+        category: "日期与时间",
+        desc: "计算两个日期之间的天数差",
+        syntax: "DAYS(end_date, start_date)",
+        example: "=DAYS(\"2023-12-31\", TODAY())",
+        params: [
+            {name: "end_date", type: "必需", desc: "结束日期"},
+            {name: "start_date", type: "必需", desc: "开始日期"}
+        ],
+        versions: ["Excel 2013+"]
+    },
+
+    "EDATE": {
+        category: "日期与时间",
+        desc: "计算指定月数之前/之后的日期",
+        syntax: "EDATE(start_date, months)",
+        example: "=EDATE(TODAY(), 3) 返回3个月后的日期",
+        params: [
+            {name: "start_date", type: "必需", desc: "起始日期"},
+            {name: "months", type: "必需", desc: "前后的月数（负数表示之前）"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "EOMONTH": {
+        category: "日期与时间",
+        desc: "返回指定月数之前或之后的月份的最后一天",
+        syntax: "EOMONTH(start_date, months)",
+        example: "=EOMONTH(TODAY(), 1)",
+        params: [
+            {name: "start_date", type: "必需", desc: "开始日期"},
+            {name: "months", type: "必需", desc: "前后的月数"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "NETWORKDAYS": {
+        category: "日期与时间",
+        desc: "计算两个日期之间的工作日天数",
+        syntax: "NETWORKDAYS(start_date, end_date, [holidays])",
+        example: "=NETWORKDAYS(A2, B2, C2:C10)",
+        params: [
+            {name: "start_date", type: "必需", desc: "开始日期"},
+            {name: "end_date", type: "必需", desc: "结束日期"},
+            {name: "[holidays]", type: "可选", desc: "排除的节假日列表"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "NOW": {
+        category: "日期与时间",
+        desc: "返回当前日期和时间",
+        syntax: "NOW()",
+        example: "=NOW()",
+        params: [],
+        versions: ["Excel 2003+"]
+    },
+
+    "TIME": {
+        category: "日期与时间",
+        desc: "将小时、分钟、秒转换为时间值",
+        syntax: "TIME(hour, minute, second)",
+        example: "=TIME(14, 30, 0) 返回2:30 PM",
+        params: [
+            {name: "hour", type: "必需", desc: "小时（0-23）"},
+            {name: "minute", type: "必需", desc: "分钟（0-59）"},
+            {name: "second", type: "必需", desc: "秒（0-59）"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "TODAY": {
+        category: "日期与时间",
+        desc: "返回当前日期",
+        syntax: "TODAY()",
+        example: "=TODAY()",
+        params: [],
+        versions: ["Excel 2003+"]
+    },
+
+    "WORKDAY": {
+        category: "日期与时间",
+        desc: "计算指定工作日后的日期（排除周末和节假日）",
+        syntax: "WORKDAY(start_date, days, [holidays])",
+        example: "=WORKDAY(A2, 10, B2:B10)",
+        params: [
+            {name: "start_date", type: "必需", desc: "开始日期"},
+            {name: "days", type: "必需", desc: "工作日天数"},
+            {name: "[holidays]", type: "可选", desc: "节假日列表"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "WORKDAY.INTL": {
+        category: "日期与时间",
+        desc: "计算指定工作日后的日期（可自定义周末）",
+        syntax: "WORKDAY.INTL(start_date, days, [weekend], [holidays])",
+        example: "=WORKDAY.INTL(TODAY(),10,7,B2:B10)",
+        params: [
+            {name: "start_date", type: "必需", desc: "开始日期"},
+            {name: "days", type: "必需", desc: "工作日天数"},
+            {name: "[weekend]", type: "可选", desc: "自定义周末参数（1-7或17位字符串）"}
+        ],
+        versions: ["Excel 2013+"]
+    },
+
+    "YEAR": {
+        category: "日期与时间",
+        desc: "返回日期中的年份",
+        syntax: "YEAR(serial_number)",
+        example: "=YEAR(\"2023-12-31\") 返回2023",
+        params: [
+            {name: "serial_number", type: "必需", desc: "日期值"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "FV": {
+        category: "财务",
+        desc: "计算投资的未来值",
+        syntax: "FV(rate, nper, pmt, [pv], [type])",
+        example: "=FV(5%/12, 12*10, -500)",
+        params: [
+            {name: "rate", type: "必需", desc: "每期利率"},
+            {name: "nper", type: "必需", desc: "总期数"},
+            {name: "pmt", type: "必需", desc: "每期付款金额"},
+            {name: "[pv]", type: "可选", desc: "现值（默认0）"},
+            {name: "[type]", type: "可选", desc: "0=期末付款（默认），1=期初付款"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "PV": {
+        category: "财务",
+        desc: "计算投资的现值",
+        syntax: "PV(rate, nper, pmt, [fv], [type])",
+        example: "=PV(5%/12, 12*10, -500)",
+        params: [
+            {name: "rate", type: "必需", desc: "每期利率"},
+            {name: "nper", type: "必需", desc: "总期数"},
+            {name: "pmt", type: "必需", desc: "每期付款金额"},
+            {name: "[fv]", type: "可选", desc: "未来值（默认0）"},
+            {name: "[type]", type: "可选", desc: "0=期末付款（默认），1=期初付款"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "RATE": {
+        category: "财务",
+        desc: "计算年金的每期利率",
+        syntax: "RATE(nper, pmt, pv, [fv], [type], [guess])",
+        example: "=RATE(12, -1000, 12000)",
+        params: [
+            {name: "nper", type: "必需", desc: "总付款期数"},
+            {name: "pmt", type: "必需", desc: "每期付款金额"},
+            {name: "pv", type: "必需", desc: "现值"},
+            {name: "[fv]", type: "可选", desc: "未来值（默认0）"},
+            {name: "[type]", type: "可选", desc: "0=期末付款（默认），1=期初付款"},
+            {name: "[guess]", type: "可选", desc: "预估利率（默认10%）"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "HYPERLINK": {
+        category: "其他",
+        desc: "创建可点击的超链接",
+        syntax: "HYPERLINK(link_location, [friendly_name])",
+        example: "=HYPERLINK(\"https://www.example.com\", \"点击访问\")",
+        params: [
+            {name: "link_location", type: "必需", desc: "链接地址"},
+            {name: "[friendly_name]", type: "可选", desc: "显示文本"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ARRAYFORMULA-LOGIC": {
+        category: "数组公式",
+        desc: "数组逻辑运算组合",
+        syntax: "ARRAYFORMULA(IF((range1=cond1)*(range2=cond2), result, \"\"))",
+        example: "=ARRAYFORMULA(IF((A2:A100>50)*(B2:B100=\"是\"), C2:C100, \"\"))",
+        params: [
+            {name: "conditions", type: "必需", desc: "多个逻辑条件"},
+            {name: "result_range", type: "必需", desc: "符合条件时返回的值"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "DATE-IFERROR-HANDLER": {
+        category: "错误处理",
+        desc: "日期计算错误处理组合",
+        syntax: "IFERROR(DATE(year,month,day), \"无效日期\")",
+        example: "=IFERROR(DATE(B2,C2,D2), \"日期错误\")",
+        params: [
+            {name: "year", type: "必需", desc: "年份"},
+            {name: "month", type: "必需", desc: "月份"},
+            {name: "day", type: "必需", desc: "日期"}
+        ],
+        versions: ["Excel 2007+"]
+    },
+
+    "CHOOSECOLS": {
+        category: "动态数组",
+        desc: "从数组中选取指定列",
+        syntax: "CHOOSECOLS(array, col_num1, [col_num2], ...)",
+        example: "=CHOOSECOLS(A2:F100, 1, 3, 5)",
+        params: [
+            {name: "array", type: "必需", desc: "源数据数组"},
+            {name: "col_num1", type: "必需", desc: "要选取的列号"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "DROP": {
+        category: "动态数组",
+        desc: "从数组开头/结尾排除指定行数",
+        syntax: "DROP(array, rows, [columns])",
+        example: "=DROP(A2:C100, 5)",
+        params: [
+            {name: "array", type: "必需", desc: "源数据数组"},
+            {name: "rows", type: "必需", desc: "要排除的行数（正数从开始，负数从结尾）"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "FILTER": {
+        category: "动态数组",
+        desc: "基于条件筛选数据区域",
+        syntax: "FILTER(array, include, [if_empty])",
+        example: "=FILTER(A2:C100, B2:B100>5000)",
+        params: [
+            {name: "array", type: "必需", desc: "要筛选的源数据区域"},
+            {name: "include", type: "必需", desc: "布尔数组作为筛选条件"},
+            {name: "[if_empty]", type: "可选", desc: "无结果时返回的值"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "FILTER-SORT": {
+        category: "动态数组",
+        desc: "动态排序筛选结果",
+        syntax: "SORT(FILTER(data_range, (criteria_range=criteria)), sort_col, order)",
+        example: "=SORT(FILTER(A2:C100, B2:B100>1000), 3, -1)",
+        params: [
+            {name: "data_range", type: "必需", desc: "数据范围"},
+            {name: "criteria_range", type: "必需", desc: "条件范围"},
+            {name: "criteria", type: "必需", desc: "筛选条件"},
+            {name: "sort_col", type: "必需", desc: "排序列号"},
+            {name: "order", type: "必需", desc: "1=升序, -1=降序"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "GROUPBY": {
+        category: "动态数组",
+        desc: "按指定列分组并聚合数据",
+        syntax: "GROUPBY(row_fields, values, function, [field_headers])",
+        example: "=GROUPBY(A2:A100, C2:C100, SUM)/=GROUPBY(region, sales, SUM)",
+        params: [
+            {name: "row_fields", type: "必需", desc: "支持多字段分组：CHOOSE({1,2},region,product)"},
+            {name: "values", type: "必需", desc: "要聚合的值区域"},
+            {name: "function", type: "必需", desc: "聚合函数（SUM/AVERAGE等）"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "HSTACK": {
+        category: "动态数组",
+        desc: "水平堆叠多个数组",
+        syntax: "HSTACK(array1, [array2], ...)",
+        example: "=HSTACK(A2:A10, D2:D10)",
+        params: [
+            {name: "array1", type: "必需", desc: "第一个数组"},
+            {name: "[array2]", type: "可选", desc: "其他水平堆叠数组"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "SEQUENCE": {
+        category: "动态数组",
+        desc: "生成数字序列数组",
+        syntax: "SEQUENCE(rows, [columns], [start], [step])",
+        example: "=SEQUENCE(5,3,10,2)",
+        params: [
+            {name: "rows", type: "必需", desc: "生成的行数"},
+            {name: "[columns]", type: "可选", desc: "生成的列数（默认1）"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "SORTBY": {
+        category: "动态数组",
+        desc: "按多列排序并返回排序后的数组",
+        syntax: "SORTBY(array, by_array1, [sort_order1], ...)",
+        example: "=SORTBY(A2:C100, B2:B100, -1)",
+        params: [
+            {name: "array", type: "必需", desc: "要排序的源数据"},
+            {name: "by_array1", type: "必需", desc: "第一个排序依据数组"},
+            {name: "[sort_order1]", type: "可选", desc: "1升序/-1降序"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "TAKE": {
+        category: "动态数组",
+        desc: "从数组开头/结尾获取指定行数列数",
+        syntax: "TAKE(array, rows, [columns])",
+        example: "=TAKE(A2:C100, -5)",
+        params: [
+            {name: "array", type: "必需", desc: "源数据数组"},
+            {name: "rows", type: "必需", desc: "要获取的行数（负数从结尾计算）"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "TOCOL": {
+        category: "动态数组",
+        desc: "将数组转换为单列",
+        syntax: "TOCOL(array, [ignore], [scan_by_column])",
+        example: "=TOCOL(A2:C10)",
+        params: [
+            {name: "array", type: "必需", desc: "要转换的二维数组"},
+            {name: "[ignore]", type: "可选", desc: "忽略空白或错误值"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "TOROW": {
+        category: "动态数组",
+        desc: "将数组转换为单行",
+        syntax: "TOROW(array, [ignore], [scan_by_column])",
+        example: "=TOROW(A2:C10)",
+        params: [
+            {name: "array", type: "必需", desc: "要转换的二维数组"},
+            {name: "[ignore]", type: "可选", desc: "忽略空白或错误值"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "VSTACK": {
+        category: "动态数组",
+        desc: "垂直堆叠多个数组",
+        syntax: "VSTACK(array1, [array2], ...)",
+        example: "=VSTACK(A2:C10, E2:G20)",
+        params: [
+            {name: "array1", type: "必需", desc: "第一个数组"},
+            {name: "[array2]", type: "可选", desc: "其他垂直堆叠数组"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+
+    "HYPERLINK-CELL": {
+        category: "交互功能",
+        desc: "动态生成带参数的链接",
+        syntax: "HYPERLINK(\"#\"&CELL(\"address\",target_cell), display_text)",
+        example: "=HYPERLINK(\"#\"&CELL(\"address\",B10), \"跳转到详情\")",
+        params: [
+            {name: "target_cell", type: "必需", desc: "目标单元格引用"},
+            {name: "display_text", type: "必需", desc: "链接显示文本"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "IF-AND-DATERANGE": {
+        category: "日期判断",
+        desc: "日期范围有效性检查组合",
+        syntax: "IF(AND(date>=start_date,date<=end_date), \"有效\", \"过期\")",
+        example: "=IF(AND(B2>=DATE(2023,1,1),B2<=DATE(2023,12,31)), \"有效\", \"过期\")",
+        params: [
+            {name: "date", type: "必需", desc: "检查日期"},
+            {name: "start_date", type: "必需", desc: "开始日期"},
+            {name: "end_date", type: "必需", desc: "结束日期"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "IF-COUNTIF-VALIDATE": {
+        category: "数据验证",
+        desc: "防止重复输入验证组合",
+        syntax: "IF(COUNTIF(range, value)>1, \"重复\", \"\")",
+        example: "=IF(COUNTIF(A:A,A2)>1, \"身份证重复\", \"\")",
+        params: [
+            {name: "range", type: "必需", desc: "验证区域"},
+            {name: "value", type: "必需", desc: "验证值"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "IFERROR-VLOOKUP": {
+        category: "错误处理",
+        desc: "安全查找组合（避免显示错误值）",
+        syntax: "IFERROR(VLOOKUP(...), fallback_value)",
+        example: "=IFERROR(VLOOKUP(A2,B1:C10,2,FALSE), \"未找到\")",
+        params: [
+            {name: "lookup_value", type: "必需", desc: "查找值"},
+            {name: "table_array", type: "必需", desc: "查找区域"},
+            {name: "col_index", type: "必需", desc: "返回列号"},
+            {name: "fallback_value", type: "必需", desc: "错误时返回值"}
+        ],
+        versions: ["Excel 2010+"]
+    },
+
+    "INDIRECT-ROW": {
+        category: "动态引用",
+        desc: "动态构建区域引用",
+        syntax: "INDIRECT(\"A\"&ROW()&\":C\"&ROW()+10)",
+        example: "=SUM(INDIRECT(\"B\"&ROW()&\":B\"&ROW()+5))",
+        params: [
+            {name: "start_col", type: "必需", desc: "起始列字母"},
+            {name: "rows_num", type: "必需", desc: "包含行数"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "LAMBDA": {
+        category: "高级函数",
+        desc: "创建自定义函数并重复使用",
+        syntax: "LAMBDA([parameter1, ...], calculation)",
+        example: "=LAMBDA(f, LAMBDA(x, f(x,x)))(LAMBDA(a,b,a+b))(3,5)",
+        params: [
+            {name: "parameter1", type: "可选", desc: "输入参数"},
+            {name: "calculation", type: "必需", desc: "计算表达式"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "BYROW": {
+        category: "高级函数",
+        desc: "逐行应用LAMBDA函数",
+        syntax: "BYROW(array, lambda)",
+        example: "=BYROW(A2:C10, LAMBDA(row, SUM(row)))",
+        params: [
+            {name: "array", type: "必需", desc: "二维数组"},
+            {name: "lambda", type: "必需", desc: "行级计算函数"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "LET": {
+        category: "高级函数",
+        desc: "定义变量并在公式中使用",
+        syntax: "LET(name1, value1, [name2], [value2], calculation)",
+        example: "=LET(x, A2*0.1, y, B2*0.2, x+y)",
+        params: [
+            {name: "name1", type: "必需", desc: "第一个变量名称"},
+            {name: "value1", type: "必需", desc: "对应的变量值"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "SCAN": {
+        category: "高级函数",
+        desc: "对数组进行累积计算",
+        syntax: "SCAN([initial_value], array, lambda)",
+        example: "=SCAN(0, A2:A10, LAMBDA(a,b,a+b))",
+        params: [
+            {name: "array", type: "必需", desc: "要扫描的数组"},
+            {name: "lambda", type: "必需", desc: "LAMBDA函数定义计算规则"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "LET-CALCULATE": {
+        category: "高级计算",
+        desc: "变量定义计算组合",
+        syntax: "LET(name1, value1, [name2], [value2], calculation)",
+        example: "=LET(x, A2*0.1, y, B2*0.2, x+y)",
+        params: [
+            {name: "variables", type: "必需", desc: "变量定义对"},
+            {name: "calculation", type: "必需", desc: "最终计算公式"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "OFFSET-COUNTA": {
+        category: "动态范围",
+        desc: "自动扩展的动态区域引用",
+        syntax: "OFFSET(start_cell,0,0,COUNTA(column_range),1)",
+        example: "=SUM(OFFSET(A1,0,0,COUNTA(A:A),1))",
+        params: [
+            {name: "start_cell", type: "必需", desc: "起始单元格"},
+            {name: "column_range", type: "必需", desc: "计数范围"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "SUM-OFFSET-DYNAMIC": {
+        category: "动态计算",
+        desc: "动态范围求和组合",
+        syntax: "SUM(OFFSET(start_cell,0,0,COUNTA(column),1))",
+        example: "=SUM(OFFSET(A1,0,0,COUNTA(A:A),1))",
+        params: [
+            {name: "start_cell", type: "必需", desc: "起始单元格"},
+            {name: "column", type: "必需", desc: "计数列"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "TEXT-DATE": {
+        category: "日期与文本",
+        desc: "日期格式转换组合",
+        syntax: "TEXT(DATE(year,month,day), \"format\")",
+        example: "=TEXT(DATE(2023,12,25), \"yyyy年mm月dd日\")",
+        params: [
+            {name: "year", type: "必需", desc: "年份"},
+            {name: "month", type: "必需", desc: "月份"},
+            {name: "day", type: "必需", desc: "日期"},
+            {name: "format", type: "必需", desc: "文本格式"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "CONCATENATE-LEFT-TRIM": {
+        category: "文本处理",
+        desc: "智能文本合并组合",
+        syntax: "CONCATENATE(LEFT(text1,num),TRIM(text2))",
+        example: "=CONCATENATE(LEFT(A2,3),\"-\",TRIM(B2))",
+        params: [
+            {name: "text1", type: "必需", desc: "截取文本"},
+            {name: "num", type: "必需", desc: "截取长度"},
+            {name: "text2", type: "必需", desc: "合并文本"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "TEXTJOIN-IF-CONDITIONAL": {
+        category: "文本处理",
+        desc: "多条件文本合并组合",
+        syntax: "TEXTJOIN(\",\",TRUE,IF(condition_range=condition,text_range,\"\"))",
+        example: "=TEXTJOIN(\",\",TRUE,IF(A2:A100=\"销售部\",B2:B100,\"\"))",
+        params: [
+            {name: "condition_range", type: "必需", desc: "条件区域"},
+            {name: "condition", type: "必需", desc: "筛选条件"},
+            {name: "text_range", type: "必需", desc: "合并内容区域"}
+        ],
+        versions: ["Excel 2019+"]
+    },
+
+    "CONVERT": {
+        category: "工程",
+        desc: "将数字从一种度量系统转换为另一种",
+        syntax: "CONVERT(number, from_unit, to_unit)",
+        example: "=CONVERT(100,\"mi\",\"km\")",
+        params: [
+            {name: "number", type: "必需", desc: "要转换的数值"},
+            {name: "from_unit", type: "必需", desc: "原单位代码（如\"kg\"）"},
+            {name: "to_unit", type: "必需", desc: "目标单位代码"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "ROUND-SUMIF-CONDITIONAL": {
+        category: "数学计算",
+        desc: "条件舍入求和组合",
+        syntax: "ROUND(SUMIF(range,criteria,sum_range),decimal)",
+        example: "=ROUND(SUMIF(A:A,\">1000\",B:B),2)",
+        params: [
+            {name: "range", type: "必需", desc: "条件区域"},
+            {name: "criteria", type: "必需", desc: "判断条件"},
+            {name: "sum_range", type: "必需", desc: "求和区域"},
+            {name: "decimal", type: "必需", desc: "小数位数"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+    "FILTER-SORT-UNIQUE": {
+        category: "动态数组",
+        desc: "多维数据处理组合",
+        syntax: "SORT(UNIQUE(FILTER(data,(criteria1)*(criteria2))),sort_col,order)",
+        example: "=SORT(UNIQUE(FILTER(A2:C100,(B2:B100>1000)*(C2:C100=\"是\"))),3,-1)",
+        params: [
+            {name: "data", type: "必需", desc: "数据范围"},
+            {name: "criteria1", type: "必需", desc: "第一个条件"},
+            {name: "criteria2", type: "必需", desc: "第二个条件"},
+            {name: "sort_col", type: "必需", desc: "排序列号"},
+            {name: "order", type: "必需", desc: "排序方式"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "UNIQUE": {
+        category: "动态数组",
+        desc: "返回列表中的唯一值",
+        syntax: "UNIQUE(array, [by_col], [exactly_once])",
+        example: "=UNIQUE(A2:A100)",
+        params: [
+            {name: "array", type: "必需", desc: "源数据区域"},
+            {name: "[by_col]", type: "可选", desc: "TRUE=按列比较，FALSE=按行比较"},
+            {name: "[exactly_once]", type: "可选", desc: "TRUE=仅返回出现一次的值"}
+        ],
+        versions: ["Excel 365+"]
+    },
+
+    "VLOOKUP-INDIRECT-SHEET": {
+        category: "跨表引用",
+        desc: "动态跨表查询组合",
+        syntax: "VLOOKUP(value,INDIRECT(sheet_name&\"!range\"),col_index,0)",
+        example: "=VLOOKUP(A2,INDIRECT(B2&\"!A:D\"),4,0)",
+        params: [
+            {name: "value", type: "必需", desc: "查找值"},
+            {name: "sheet_name", type: "必需", desc: "工作表名称"},
+            {name: "range", type: "必需", desc: "查询范围"},
+            {name: "col_index", type: "必需", desc: "返回列号"}
+        ],
+        versions: ["Excel 2003+"]
+    },
+
+        };
+
+        // 系统状态
+        let isRandomActive = false;
+        let randomInterval;
+        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+        let showFavorites = false;
+        document.getElementById('favoritesList').style.display = 'none'; 
+        // 对话框控制功能
+        let isChatMinimized = false;
+        function toggleChatSize() {
+              const chatbox = document.getElementById('chatbox');
+              isChatMinimized = !isChatMinimized;
+              chatbox.classList.toggle('minimized', isChatMinimized);
+        }
+
+
+        function toggleFavorites() {
+            showFavorites = !showFavorites;
+            const list = document.getElementById('favoritesList');
+            list.style.display = showFavorites ? 'block' : 'none';
+            if(showFavorites) updateFavoritesList();
+       }
+
+        // 初始化事件监听
+function init() {
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const value = e.target.value;
+        updateDatalist(value.toLowerCase());
+        // 添加自动选择逻辑
+        if(functions[value.toUpperCase()]) {
+            showFunctionInfo(value.toUpperCase());
+        }
+    });
+            
+            // 点击蒙版关闭弹窗
+            document.getElementById('detailModal').addEventListener('click', function(e) {
+                if(e.target === this) closeModal();
+            });
+        }
+
+        // 动态更新提示列表
+        function updateDatalist(searchTerm = '') {
+            const datalist = document.getElementById('functions');
+            datalist.innerHTML = '';
+            
+            // 获取匹配结果
+            const matches = Object.keys(functions).filter(func => {
+                const lowerFunc = func.toLowerCase();
+                const lowerDesc = functions[func].desc.toLowerCase();
+                return lowerFunc.includes(searchTerm) || lowerDesc.includes(searchTerm);
+            });
+
+            // 动态设置最大高度（可选）
+            datalist.style.maxHeight = matches.length > 10 ? "300px" : "auto";
+
+            // 填充选项
+            matches.forEach(func => {
+                const option = document.createElement('option');
+                option.value = func;
+                option.textContent = `${func} - ${functions[func].desc}`;
+                datalist.appendChild(option);
+            });
+        }
+
+            // 显示函数基本信息
+            function showFunctionInfo(funcName) {
+           // 移除隐藏随机区域的代码
+            const infoDiv = document.getElementById('functionList');
+            const func = functions[funcName];
+            if(!func) return;
+ 
+            // 使用DOM API代替innerHTML以保留事件监听   
+            const card = document.createElement('div');
+            card.className = 'function-card';
+            card.innerHTML = `
+                <h3>函数名称：${funcName}</h3>
+                <p>用途：${func.desc}</p>
+                <div class="meta">
+                    <span>分类：${func.category}</span>
+                    <span>版本：${func.versions.join(', ')}</span>
+                </div>
+            `;
+            card.onclick = () => showDetail(funcName);
+            infoDiv.innerHTML = '';
+            infoDiv.appendChild(card);
+        }
+
+        // 随机查询功能
+        function toggleRandom() {
+            const display = document.getElementById('randomDisplay');
+
+            // 确保完全重置状态
+            document.getElementById('searchInput').value = '';
+            document.getElementById('functionList').innerHTML = '';
+
+            if (!isRandomActive) {
+                isRandomActive = true;
+                display.style.display = 'block';
+                // 修复定时器逻辑
+                randomInterval = setInterval(() => {
+                    const funcs = Object.keys(functions);
+                    const randomFunc = funcs[Math.floor(Math.random() * funcs.length)];
+                    display.innerHTML = `
+                    <div class="function-card" onclick="showDetail('${randomFunc}')">
+                    <h3>${randomFunc}</h3>
+                    <p style="font-size:0.9em">${functions[randomFunc].desc}</p>
+                    </div>
+                    `;
+                }, 150); // 调整间隔时间为1.5秒更合理
+            } else {
+                isRandomActive = false;
+                display.style.display = 'none';
+                clearInterval(randomInterval);
+            }
+        }
+
+// 修改：resetSearch函数（完全重置）
+        function resetSearch() {
+            // 确保重置所有元素
+            document.getElementById('searchInput').value = '';
+            document.getElementById('randomDisplay').innerHTML = '';
+            document.getElementById('randomDisplay').style.display = 'none';
+            document.getElementById('functionList').innerHTML = '';
+            document.getElementById('favoritesList').style.display = 'none';
+            
+            // 强制重置状态变量
+            showFavorites = false;
+            isRandomActive = false;
+            clearInterval(randomInterval);
+        }
+
+        // 显示详情弹窗
+        function showDetail(funcName) {
+            const func = functions[funcName];
+            document.getElementById('funcTitle').textContent = funcName;
+            document.getElementById('funcDesc').textContent = func.desc;
+            document.getElementById('funcSyntax').textContent = func.syntax;
+            document.getElementById('funcExample').textContent = func.example;
+            
+            // 构建参数表
+            const paramTable = document.getElementById('paramTable');
+            paramTable.innerHTML = `
+                <tr><th>参数</th><th>类型</th><th>说明</th></tr>
+                ${func.params.map(p => `
+                    <tr>
+                        <td>${p.name}</td>
+                        <td>${p.type}</td>
+                        <td>${p.desc}</td>
+                    </tr>
+                `).join('')}
+            `;
+
+            // 清除旧的版本信息（确保选择器准确）
+            const oldVersionInfo = document.querySelector('.modal-content .version-info');
+            if(oldVersionInfo) oldVersionInfo.remove();
+
+            // 添加新版版本信息到参数表之后
+            document.getElementById('paramTable').insertAdjacentHTML('afterend', `
+                <div class="version-info">
+                    <h3>适用版本</h3>
+                    <span>${functions[funcName].versions.join('</span><span>')}</span>
+                </div>
+            `);
+
+            // 更新收藏状态
+            document.querySelector('.favorite-btn').classList.toggle('active', favorites.includes(funcName));
+            document.getElementById('detailModal').style.display = 'block';
+        }
+
+        // 收藏功能
+        function toggleFavorite() {
+            const funcName = document.getElementById('funcTitle').textContent;
+            const btn = document.querySelector('.favorite-btn'); // 获取按钮元素
+            
+    if (favorites.includes(funcName)) {
+        favorites = favorites.filter(f => f !== funcName);
+        btn.classList.remove('active'); // 强制移除激活状态
+    } else {
+        favorites.push(funcName);
+        btn.classList.add('active');    // 强制添加激活状态
+    }
+            
+    // 添加视觉反馈动画
+    btn.style.transform = 'scale(1.2)';
+    setTimeout(() => btn.style.transform = 'scale(1)', 200);
+
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    updateFavoritesList();
+
+// 新增：立即更新收藏列表显示
+    if(showFavorites) updateFavoritesList(); // 添加此行
+        }
+
+        // 更新收藏列表
+        function updateFavoritesList() {
+            const tbody = document.querySelector('.favorites-table tbody');
+            // 修复模板字符串拼接错误
+            tbody.innerHTML = favorites.map((func, index) => `
+                <tr>
+                    <td>${index+1}</td>
+                    <td class="function-name" onclick="showDetail('${func}')">${func}</td>
+                    <td>${functions[func].category}</td>
+                    <td style="text-align: left; padding-left:20px;">${functions[func].desc}</td>
+                </tr>
+            `).join('');
+        }
+
+       // // 新增关闭函数
+function closeModal() {
+    document.getElementById('detailModal').style.display = 'none'; // 仅关闭详情弹窗
+}
+
+        // 修改暂停功能（保持显示）
+        function pauseRoll() {
+            clearInterval(randomInterval);
+            isRandomActive = false;
+            const display = document.getElementById('randomDisplay');
+            // 修复获取当前函数逻辑
+            const currentFunc = document.querySelector('#randomDisplay h3')?.textContent;
+            
+            if (currentFunc && functions[currentFunc]) {
+                showFunctionInfo(currentFunc);
+                display.innerHTML = `
+                    <div class="function-card">
+                        <h3>${currentFunc}</h3>
+                        <p style="color:#666; font-size:0.9em">已暂停</p>
+                    </div>
+                `;
+                // 添加平滑滚动效果
+                document.getElementById('functionList').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+
+// 新增4：统计函数
+function updateFunctionCount() {
+    const count = Object.keys(functions).length;
+    document.getElementById('functionCount').textContent = 
+        `已收录 ${count} 个常用函数`;
+}
+
+        // 初始化执行
+        window.onload = () => {
+            init();
+            updateDatalist();
+            updateFavoritesList();
+            updateFunctionCount(); // 新增统计显示
+            document.body.addEventListener('click', function(e) {
+                if(e.target.classList.contains('min-btn')) {
+                    toggleChatSize();
+                }
+                // 确保只有聊天框的关闭按钮操作聊天框
+                if(e.target.classList.contains('chat-close-btn')) {
+                    document.getElementById('chatbox').style.display = 'none';
+                }
+            });
+        };
+    </script>
+</body>
+</html>
